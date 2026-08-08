@@ -23,4 +23,7 @@ public class BelowNamePlayerData {
 
     /** Flag tracking whether this feature is disabled for the player with condition or not */
     public final AtomicBoolean disabled = new AtomicBoolean();
+
+    /** Nullable API override for viewer objective visibility. */
+    public volatile Boolean apiEnabled;
 }

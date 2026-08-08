@@ -96,7 +96,7 @@ public class Config {
         placeholders = PlaceholdersConfiguration.fromSection(config.getConfigurationSection("placeholders"));
         components = ComponentConfiguration.fromSection(config.getConfigurationSection("components"));
 
-        if (config.getBoolean("belowname-objective.enabled", false)) belowname = BelowNameConfiguration.fromSection(config.getConfigurationSection("belowname-objective"));
+        belowname = BelowNameConfiguration.fromSection(config.getConfigurationSection("belowname-objective"));
         if (config.getBoolean("bossbar.enabled", false)) bossbar = BossBarConfiguration.fromSection(config.getConfigurationSection("bossbar"));
         if (config.getBoolean("global-playerlist.enabled", false)) globalPlayerList = GlobalPlayerListConfiguration.fromSection(config.getConfigurationSection("global-playerlist"));
         if (config.getBoolean("header-footer.enabled", true)) headerFooter = HeaderFooterConfiguration.fromSection(config.getConfigurationSection("header-footer"));
@@ -104,7 +104,7 @@ public class Config {
         if (config.getBoolean("mysql.enabled", false)) mysql = MySQLConfiguration.fromSection(config.getConfigurationSection("mysql"));
         if (config.getBoolean("per-world-playerlist.enabled", false)) perWorldPlayerList = PerWorldPlayerListConfiguration.fromSection(config.getConfigurationSection("per-world-playerlist"));
         if (config.getBoolean("ping-spoof.enabled", false)) pingSpoof = PingSpoofConfiguration.fromSection(config.getConfigurationSection("ping-spoof"));
-        if (config.getBoolean("playerlist-objective.enabled", true)) playerlistObjective = PlayerListObjectiveConfiguration.fromSection(config.getConfigurationSection("playerlist-objective"));
+        playerlistObjective = PlayerListObjectiveConfiguration.fromSection(config.getConfigurationSection("playerlist-objective"));
         if (config.getBoolean("scoreboard.enabled", false)) scoreboard = ScoreboardConfiguration.fromSection(config.getConfigurationSection("scoreboard"));
         if (config.getBoolean("scoreboard-teams.enabled", true) || config.getBoolean("layout.enabled", false)) sorting = SortingConfiguration.fromSection(config.getConfigurationSection("scoreboard-teams"));
         if (config.getBoolean("tablist-name-formatting.enabled", false)) tablistFormatting = TablistFormattingConfiguration.fromSection(config.getConfigurationSection("tablist-name-formatting"));
@@ -118,7 +118,7 @@ public class Config {
                                 " fake players, making per world playerlist completely useless as real players are pushed out of the playerlist. " +
                         "Disable per world playerlist for the same result, but with better performance.");
             }
-            if (playerlistObjective != null) {
+            if (playerlistObjective != null && playerlistObjective.isEnabled()) {
                 TAB.getInstance().getConfigHelper().startup().startupWarn(config.getFile(), "Layout feature breaks playerlist-objective feature, because it replaces real player with fake slots " +
                         "with different usernames for more reliable functionality. Disable playerlist-objective feature, as it will only look bad " +
                         "and consume resources.");

@@ -20,4 +20,10 @@ public class PlayerListObjectivePlayerData {
 
     /** Flag tracking whether this feature is disabled for the player with condition or not */
     public final AtomicBoolean disabled = new AtomicBoolean();
+
+    /** Nullable API override for viewer objective visibility. */
+    public volatile Boolean apiEnabled;
+
+    /** Nullable API override for render type. */
+    public volatile me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager.RenderType apiRenderType;
 }

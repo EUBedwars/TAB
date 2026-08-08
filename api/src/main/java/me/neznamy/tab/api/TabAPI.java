@@ -5,6 +5,8 @@ import java.util.UUID;
 import lombok.NonNull;
 import lombok.Setter;
 import me.neznamy.tab.api.bossbar.BossBarManager;
+import me.neznamy.tab.api.belowname.BelowNameManager;
+import me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager;
 import me.neznamy.tab.api.event.EventBus;
 import me.neznamy.tab.api.placeholder.PlaceholderManager;
 import me.neznamy.tab.api.scoreboard.ScoreboardManager;
@@ -82,6 +84,12 @@ public abstract class TabAPI {
      * @return  scoreboard manager
      */
     public abstract @Nullable ScoreboardManager getScoreboardManager();
+
+    /** Returns below-name objective manager. The configured enabled state remains in effect until an API override is applied. */
+    public abstract @Nullable BelowNameManager getBelowNameManager();
+
+    /** Returns player-list objective manager. The configured enabled state remains in effect until an API override is applied. */
+    public abstract @Nullable PlayerListObjectiveManager getPlayerListObjectiveManager();
 
     /**
      * Returns team manager instance if the feature is enabled. If not, returns {@code null}.

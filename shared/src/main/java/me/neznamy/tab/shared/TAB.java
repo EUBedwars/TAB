@@ -316,6 +316,16 @@ public class TAB extends TabAPI {
     }
 
     @Override
+    public @Nullable me.neznamy.tab.api.belowname.BelowNameManager getBelowNameManager() {
+        return featureManager.getFeature(TabConstants.Feature.BELOW_NAME);
+    }
+
+    @Override
+    public @Nullable me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager getPlayerListObjectiveManager() {
+        return featureManager.getFeature(TabConstants.Feature.YELLOW_NUMBER);
+    }
+
+    @Override
     public @Nullable NameTag getNameTagManager() {
         return featureManager.getFeature(TabConstants.Feature.NAME_TAGS);
     }
