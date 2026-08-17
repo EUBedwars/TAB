@@ -1,6 +1,8 @@
 package me.neznamy.tab.shared.features.playerlistobjective;
 
+import me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager.RenderType;
 import me.neznamy.tab.shared.Property;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,9 +23,9 @@ public class PlayerListObjectivePlayerData {
     /** Flag tracking whether this feature is disabled for the player with condition or not */
     public final AtomicBoolean disabled = new AtomicBoolean();
 
-    /** Nullable API override for viewer objective visibility. */
-    public volatile Boolean apiEnabled;
+    /** Visibility forced using the API, {@code null} if not forced */
+    @Nullable public volatile Boolean forcedEnabled;
 
-    /** Nullable API override for render type. */
-    public volatile me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager.RenderType apiRenderType;
+    /** Render type forced using the API, {@code null} if not forced */
+    @Nullable public volatile RenderType forcedRenderType;
 }

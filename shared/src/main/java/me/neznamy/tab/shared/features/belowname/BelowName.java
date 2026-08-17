@@ -145,36 +145,47 @@ public class BelowName extends RefreshableFeature implements JoinListener, QuitL
      *          Whether the feature is disabled now or not
      */
     public void onDisableConditionChange(TabPlayer p, boolean disabledNow) {
-        Boolean override = p.belowNameData.apiEnabled;
-        if (override != null) {
-            p.belowNameData.disabled.set(!override);
+        Boolean forced = p.belowNameData.forcedEnabled;
+        if (forced != null) {
+            p.belowNameData.disabled.set(!forced);
             return;
         }
-        disabledNow = !configuration.isEnabled() || disabledNow;
-        p.belowNameData.disabled.set(!disabledNow);
-        applyDisabledState(p, disabledNow);
+        if (!configuration.isEnabled()) {
+            p.belowNameData.disabled.set(true);
+            return;
+        }
+        updateVisibility(p, disabledNow);
     }
 
     private boolean configuredDisabled(@NotNull TabPlayer p) {
         return !configuration.isEnabled() || disableChecker.isDisableConditionMet(p);
     }
 
-    private void applyDisabledState(@NotNull TabPlayer p, boolean disabledNow) {
-        boolean previous = p.belowNameData.disabled.getAndSet(disabledNow);
+    private void applyDisabledState(@NotNull TabPlayer p, boolean disabled) {
+        if (p.belowNameData.disabled.getAndSet(disabled) == disabled) return;
+        updateVisibility(p, disabled);
+    }
+
+    private void updateVisibility(@NotNull TabPlayer p, boolean disabledNow) {
         if (disabledNow) {
-            if (!previous) p.getScoreboard().unregisterObjective(OBJECTIVE_NAME);
-            return;
-        }
-        if (previous) register(p); else updateObjective(p);
-        for (TabPlayer all : onlinePlayers.getPlayers()) {
-            setScore(p, all, getValue(all), all.belowNameData.fancyValue.getFormat(p));
-        }
-        if (proxy != null) {
-            sendProxyMessage(p);
-            for (ProxyPlayer proxyPlayer : proxy.getProxyPlayers().values()) {
-                if (proxyPlayer.getBelowname() == null) continue;
-                p.getScoreboard().setScore(OBJECTIVE_NAME, proxyPlayer.getNickname(),
-                        proxyPlayer.getBelowname().getValue(), null, cache.get(proxyPlayer.getBelowname().getFancyValue()));
+            p.getScoreboard().unregisterObjective(OBJECTIVE_NAME);
+        } else {
+            register(p);
+            for (TabPlayer all : onlinePlayers.getPlayers()) {
+                setScore(p, all, getValue(all), all.belowNameData.fancyValue.getFormat(p));
+            }
+            if (proxy != null) {
+                sendProxyMessage(p);
+                for (ProxyPlayer proxyPlayer : proxy.getProxyPlayers().values()) {
+                    if (proxyPlayer.getBelowname() == null) continue; // This proxy player is not loaded yet
+                    p.getScoreboard().setScore(
+                            OBJECTIVE_NAME,
+                            proxyPlayer.getNickname(),
+                            proxyPlayer.getBelowname().getValue(),
+                            null, // Unused by this objective slot
+                            cache.get(proxyPlayer.getBelowname().getFancyValue())
+                    );
+                }
             }
         }
     }
@@ -257,7 +268,7 @@ public class BelowName extends RefreshableFeature implements JoinListener, QuitL
     public void setScore(@NotNull TabPlayer viewer, @NotNull TabPlayer scoreHolder, int value, @NotNull String fancyValue) {
         if (viewer.belowNameData.disabled.get()) return;
         if (viewer.server != scoreHolder.server || viewer.world != scoreHolder.world) return; // Viewer definitely cannot see this player in game
-        if (Boolean.FALSE.equals(scoreHolder.belowNameData.apiEnabled)) {
+        if (Boolean.FALSE.equals(scoreHolder.belowNameData.forcedEnabled)) {
             viewer.getScoreboard().removeScore(OBJECTIVE_NAME, scoreHolder.getNickname());
             return;
         }
@@ -334,50 +345,63 @@ public class BelowName extends RefreshableFeature implements JoinListener, QuitL
 
     @Override
     public void setEnabled(@NonNull me.neznamy.tab.api.TabPlayer player, @Nullable Boolean enabled) {
-        TabPlayer p = (TabPlayer) player;
-        p.belowNameData.apiEnabled = enabled;
-        boolean disabled = enabled == null ? configuredDisabled(p) : !enabled;
-        if (p.belowNameData.disabled.get() != disabled) applyDisabledState(p, disabled);
-        // Refresh this player's score for other viewers as well. In particular,
-        // false removes the score and true restores it immediately.
-        refresh(p, true);
+        ensureActive();
+        customThread.execute(new TimedCaughtTask(TAB.getInstance().getCpu(), () -> {
+            TabPlayer p = (TabPlayer) player;
+            p.ensureLoaded();
+            p.belowNameData.forcedEnabled = enabled;
+            applyDisabledState(p, enabled == null ? configuredDisabled(p) : !enabled);
+            refresh(p, true);
+        }, getFeatureName(), "Processing API call (setEnabled)"));
     }
 
     @Override
-    public @Nullable Boolean getCustomEnabled(@NonNull me.neznamy.tab.api.TabPlayer player) {
-        return ((TabPlayer) player).belowNameData.apiEnabled;
+    @Nullable
+    public Boolean getCustomEnabled(@NonNull me.neznamy.tab.api.TabPlayer player) {
+        ensureActive();
+        return ((TabPlayer) player).belowNameData.forcedEnabled;
     }
 
     @Override
     public void setValue(@NonNull me.neznamy.tab.api.TabPlayer player, @Nullable Integer value) {
-        TabPlayer p = (TabPlayer) player;
-        if (p.belowNameData.value == null) return;
-        String raw = value == null ? null : String.valueOf(value);
-        if (java.util.Objects.equals(p.belowNameData.value.getTemporaryValue(), raw) &&
-                java.util.Objects.equals(p.belowNameData.fancyValue.getTemporaryValue(), raw)) return;
-        p.belowNameData.value.setTemporaryValue(raw);
-        p.belowNameData.fancyValue.setTemporaryValue(raw);
-        refresh(p, true);
+        ensureActive();
+        customThread.execute(new TimedCaughtTask(TAB.getInstance().getCpu(), () -> {
+            TabPlayer p = (TabPlayer) player;
+            p.ensureLoaded();
+            String newValue = value == null ? null : String.valueOf(value);
+            if (Objects.equals(p.belowNameData.value.getTemporaryValue(), newValue)) return;
+            p.belowNameData.value.setTemporaryValue(newValue);
+            p.belowNameData.fancyValue.setTemporaryValue(newValue);
+            refresh(p, true);
+        }, getFeatureName(), "Processing API call (setValue)"));
     }
 
     @Override
     public void setTitle(@NonNull me.neznamy.tab.api.TabPlayer player, @Nullable String title) {
-        TabPlayer p = (TabPlayer) player;
-        if (p.belowNameData.title == null) return;
-        if (java.util.Objects.equals(p.belowNameData.title.getTemporaryValue(), title)) return;
-        p.belowNameData.title.setTemporaryValue(title);
-        if (!p.belowNameData.disabled.get()) updateObjective(p);
+        ensureActive();
+        customThread.execute(new TimedCaughtTask(TAB.getInstance().getCpu(), () -> {
+            TabPlayer p = (TabPlayer) player;
+            p.ensureLoaded();
+            if (Objects.equals(p.belowNameData.title.getTemporaryValue(), title)) return;
+            p.belowNameData.title.setTemporaryValue(title);
+            if (!p.belowNameData.disabled.get()) updateObjective(p);
+        }, getFeatureName(), "Processing API call (setTitle)"));
     }
 
     @Override
     public void reset(@NonNull me.neznamy.tab.api.TabPlayer player) {
-        TabPlayer p = (TabPlayer) player;
-        if (p.belowNameData.value != null) p.belowNameData.value.setTemporaryValue(null);
-        if (p.belowNameData.fancyValue != null) p.belowNameData.fancyValue.setTemporaryValue(null);
-        if (p.belowNameData.title != null) p.belowNameData.title.setTemporaryValue(null);
-        p.belowNameData.apiEnabled = null;
-        refresh(p, true);
-        applyDisabledState(p, configuredDisabled(p));
+        ensureActive();
+        customThread.execute(new TimedCaughtTask(TAB.getInstance().getCpu(), () -> {
+            TabPlayer p = (TabPlayer) player;
+            p.ensureLoaded();
+            p.belowNameData.forcedEnabled = null;
+            p.belowNameData.value.setTemporaryValue(null);
+            p.belowNameData.fancyValue.setTemporaryValue(null);
+            p.belowNameData.title.setTemporaryValue(null);
+            applyDisabledState(p, configuredDisabled(p));
+            if (!p.belowNameData.disabled.get()) updateObjective(p);
+            refresh(p, true);
+        }, getFeatureName(), "Processing API call (reset)"));
     }
 
     @Override

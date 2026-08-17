@@ -3,7 +3,9 @@ package me.neznamy.tab.shared;
 import lombok.Getter;
 import lombok.Setter;
 import me.neznamy.tab.api.TabAPI;
+import me.neznamy.tab.api.belowname.BelowNameManager;
 import me.neznamy.tab.api.bossbar.BossBarManager;
+import me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager;
 import me.neznamy.tab.api.scoreboard.ScoreboardManager;
 import me.neznamy.tab.api.tablist.HeaderFooterManager;
 import me.neznamy.tab.api.tablist.SortingManager;
@@ -316,12 +318,12 @@ public class TAB extends TabAPI {
     }
 
     @Override
-    public @Nullable me.neznamy.tab.api.belowname.BelowNameManager getBelowNameManager() {
+    public @Nullable BelowNameManager getBelowNameManager() {
         return featureManager.getFeature(TabConstants.Feature.BELOW_NAME);
     }
 
     @Override
-    public @Nullable me.neznamy.tab.api.playerlistobjective.PlayerListObjectiveManager getPlayerListObjectiveManager() {
+    public @Nullable PlayerListObjectiveManager getPlayerListObjectiveManager() {
         return featureManager.getFeature(TabConstants.Feature.YELLOW_NUMBER);
     }
 
